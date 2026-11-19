@@ -24,6 +24,7 @@ PARSER_END(LughatDad)
 
 SKIP : {
   " " | "\r" | "\t" | "\n"
+  | < "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")? >
 }
 
 /*given skel code */
@@ -43,6 +44,9 @@ TOKEN : /* KEYWORDS */
 TOKEN : /* IDENTIFIERS */
 {
   // TODO: Define ARABIC_IDENTIFIER using Unicode range \u0600-\u06FF
+  < ARABIC_IDENTIFIER: <ARABIC_LETTER> (<ARABIC_LETTER> | <DIGIT>)* >
+| < #ARABIC_LETTER: ["\u0600"-"\u06FF"] >
+| < #DIGIT: ["0"-"9"] >
 }
 
 TOKEN : /* LITERALS */
@@ -82,3 +86,18 @@ TOKEN : /* PUNCTUATION */
 | < LBRACE: "{" >
 | < RBRACE: "}" >
 }
+
+void Start() :
+{
+  Token t;
+}
+{
+  (
+    t = getNextToken()
+    {
+      if (t.kind == EOF) break;
+      System.out.println("Token: " + tokenImage[t.kind] + " -> " + t.image);
+    }
+  )*
+}
+
