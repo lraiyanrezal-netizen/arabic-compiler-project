@@ -1,6 +1,6 @@
 options {
   UNICODE_INPUT = true;
-  STATIC = true;
+  STATIC = true;	//it means belongs to the class and not the objects
 }
 
 SKIP : {
@@ -14,6 +14,10 @@ TOKEN : /* KEYWORDS */
   | < ETHA : "\u0625\u0630\u0627" > /* إذا */
   | < WA_ELLA : "\u0648\u0625\u0644\u0627" > /* وإلا */
   | < BAYNAMA : "\u0628\u064a\u0646\u0645\u0627" > /* بينما */
+
+  /*start*/
+  | < SAH : "\u0635\u062d" > /* صح - true*/
+  | < KHATA : "\u062e\u0637\u0623" > /* خطأ -false*/
 }
 
 TOKEN : /* IDENTIFIERS */
