@@ -1,12 +1,13 @@
 /*todo*/
 options {
-  UNICODE_INPUT = true;
+  UNICODE_INPUT = true;	// allow for unicode and arabic symbols
   STATIC = true;	//it means belongs to the class and not the objects
 }
 
 SKIP : {
   " " | "\r" | "\t" | "\n"
 }
+
 /*given skel code */
 TOKEN : /* KEYWORDS */
 {
@@ -31,6 +32,7 @@ TOKEN : /* LITERALS */
     // TODO: Define NUMBER (integer and float)
     // TODO: Define STRING
 }
+/*given skel code */
 
 /*todo*/
 TOKEN : /* OPERATORS */
