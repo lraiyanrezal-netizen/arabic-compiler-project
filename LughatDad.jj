@@ -4,6 +4,24 @@ options {
   STATIC = true;	//it means belongs to the class and not the objects
 }
 
+PARSER_BEGIN(LughatDad)
+import java.io.*;
+
+public class LughatDad {
+  public static void main(String[] args) throws ParseException {
+    LughatDad parser = new LughatDad(System.in);
+    System.out.println("Reading from standard input...");
+    System.out.print("Enter Arabic code: ");
+    try {
+      parser.Start();
+    } catch (Throwable e) {
+      System.out.println("Oops.");
+      System.out.println(e.getMessage());
+    }
+  }
+}
+PARSER_END(LughatDad)
+
 SKIP : {
   " " | "\r" | "\t" | "\n"
 }
@@ -31,6 +49,8 @@ TOKEN : /* LITERALS */
 {
     // TODO: Define NUMBER (integer and float)
     // TODO: Define STRING
+ < NUMBER: (<DIGIT>)+ ( "." (<DIGIT>)+ )? >
+ | < STRING: "\"" (~["\"", "\n", "\r"])* "\"" >
 }
 /*given skel code */
 
