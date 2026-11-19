@@ -1,3 +1,4 @@
+/*todo*/
 options {
   UNICODE_INPUT = true;
   STATIC = true;	//it means belongs to the class and not the objects
@@ -6,7 +7,7 @@ options {
 SKIP : {
   " " | "\r" | "\t" | "\n"
 }
-
+/*given skel code */
 TOKEN : /* KEYWORDS */
 {
   < MUTA_GHAYYER : "\u0645\u062a\u063a\u064a\u0631" > /* متغير */
@@ -15,9 +16,9 @@ TOKEN : /* KEYWORDS */
   | < WA_ELLA : "\u0648\u0625\u0644\u0627" > /* وإلا */
   | < BAYNAMA : "\u0628\u064a\u0646\u0645\u0627" > /* بينما */
 
-  /*start*/
-  | < SAH : "\u0635\u062d" > /* صح - true*/
-  | < KHATA : "\u062e\u0637\u0623" > /* خطأ -false*/
+  /*add the two missing keywords not  present */
+  | <SAH: "\u0635\u062d"> /* صح - true*/
+  | <KHATA: "\u062e\u0637\u0623"> /* خطأ -false*/
 }
 
 TOKEN : /* IDENTIFIERS */
@@ -29,4 +30,23 @@ TOKEN : /* LITERALS */
 {
     // TODO: Define NUMBER (integer and float)
     // TODO: Define STRING
+}
+
+/*todo*/
+TOKEN : /* OPERATORS */
+{
+/*parts from lab 8*/
+  < PLUS: "+" >
+| < MINUS: "-" >
+| < STAR: "*" >
+| < SLASH: "/" >
+
+/*todo - new add comparison*/
+|< EQ: "==">
+|< NEQ: "!=">
+|< GTE: ">=">
+|< LTE: "<=">
+|< GT: ">">
+|< LT: "<">
+|< ASSIGN: "=">
 }
