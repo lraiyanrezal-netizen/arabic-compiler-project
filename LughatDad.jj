@@ -1,3 +1,8 @@
+options {
+  UNICODE_INPUT = true;
+  STATIC = true;
+}
+
 SKIP : {
   " " | "\r" | "\t" | "\n"
 }
