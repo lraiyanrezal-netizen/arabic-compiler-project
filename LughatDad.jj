@@ -50,3 +50,13 @@ TOKEN : /* OPERATORS */
 |< LT: "<">
 |< ASSIGN: "=">
 }
+
+TOKEN : /* PUNCTUATION */
+{
+/*taken from lab7*/
+  < SEMICOLON: ";" >
+| < LPAREN: "(" >
+| < RPAREN: ")" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+}
