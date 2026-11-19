@@ -92,12 +92,12 @@ void Start() :
   Token t;
 }
 {
-  (
-    t = getNextToken()
-    {
+  {
+    while (true) {
+      t = getNextToken();
       if (t.kind == EOF) break;
       System.out.println("Token: " + tokenImage[t.kind] + " -> " + t.image);
     }
-  )*
+  }
 }
 
