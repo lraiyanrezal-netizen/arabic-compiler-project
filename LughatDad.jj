@@ -6,14 +6,25 @@ options {
 
 PARSER_BEGIN(LughatDad)
 import java.io.*;
+import java.util.HashMap;
 
 public class LughatDad {
+  static HashMap<String, Object> symbolTable = new HashMap<>();
+  interface Expr {
+    Object eval();
+  }
+  interface Stmt {
+    void exec();
+  }
   public static void main(String[] args) throws ParseException {
     LughatDad parser = new LughatDad(System.in);
     System.out.println("Reading from standard input...");
     System.out.print("Enter Arabic code: ");
     try {
-      parser.Start();
+      List<Stmt> stmts = parser.Start();
+      for(Stmt stmt : stmts) {
+        stmt.exec();
+      }
     } catch (Throwable e) {
       System.out.println("Oops.");
       System.out.println(e.getMessage());
@@ -90,19 +101,28 @@ TOKEN : /* PUNCTUATION */
 /* ===================== PART 2: GRAMMAR & PARSER ===================== */
 
 /* Program ::= ( Statement )* EOF */
-void Start() : {}
+List<Stmt> Start() : 
 {
-  ( Statement() )* <EOF>
+  List<Stmt> stmts = new ArrayList<Stmt>();
+  Stmt s;
+}
+{
+  ( s = Statement() { stmts.add(s); } )* <EOF>
+  { return stmts; }
 }
 
 /* Statement ::= VarDecl | Assignment | PrintStmt | IfStmt | WhileStmt */
-void Statement() : {}
+Stmt Statement() :
+{ Stmt s; }
 {
-    VarDecl()
-  | Assignment()
-  | PrintStmt()
-  | IfStmt()
-  | WhileStmt()
+  (
+    s = VarDecl()
+  | s = Assignment()
+  | s = PrintStmt()
+  | s = IfStmt()
+  | s = WhileStmt()
+  )
+  { return s; }
 }
 
 /* VarDecl ::= "متغير" IDENTIFIER [ "=" Expression ] ";" */
@@ -166,13 +186,45 @@ void Term() : {}
 }
 
 /* Factor ::= NUMBER | STRING | IDENTIFIER | صح | خطأ | "(" Expression ")" | "-" Factor */
-void Factor() : {}
+Expr Factor() :
+{ Token t; Expr e; }
 {
-    <NUMBER>
-  | <STRING>
-  | <ARABIC_IDENTIFIER>
+    t = <NUMBER>
+    {
+      final double val = Double.parseDouble(t.image);
+      return new Expr() { public Object eval() { return val; } }
+    }
+  | t = <STRING> 
+    {
+      final String val = t.image.substring(1, t.image.length() - 1)
+      return new Expr() { public Object eval() { return val; } }
+    }
+  | t = <ARABIC_IDENTIFIER>
+    {
+      final String name = t.image;
+      return new Expr() {
+        public Object eval() {
+          if(!symbolTable.containsKey(name))
+            throw new RuntimeException("Undefined variable: " + name);
+          return symbolTable.get(name);
+        }
+      };
+    }
   | <SAH>
+    {
+      return new Expr() { public Object eval() { return Boolean.TRUE; } }
+    }
   | <KHATA>
-  | <LPAREN> Expression() <RPAREN>
-  | <MINUS> Factor()
+    {
+      return new Expr() { public Object eval() { return Boolean.FALSE; } }
+    }
+  | <LPAREN> e = Expression() <RPAREN>
+    {
+      return e;
+    }
+  | <MINUS> e = Factor()
+    {
+      final Double negated = ((Double) e.eval()) * -1;
+      return new Expr() { public Object eval() { return negated; } }
+    }
 }
