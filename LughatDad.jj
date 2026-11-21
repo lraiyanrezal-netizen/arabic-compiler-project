@@ -252,9 +252,13 @@ Expr Condition() :
 }
 
 /* RelOp ::= "==" | "!=" | ">" | "<" | ">=" | "<=" */
-Token RelOp() : {}
+Token RelOp() : 
+{ Token t; }
 {
-  <EQ> | <NEQ> | <GT> | <LT> | <GTE> | <LTE>
+  t = <EQ> | t = <NEQ> | t = <GT> | t = <LT> | t = <GTE> | t = <LTE>
+  {
+    return t;
+  }
 }
 
 /* Expression ::= Term ( ("+" | "-") Term )* */
