@@ -171,21 +171,56 @@ Stmt PrintStmt() :
 }
 
 /* IfStmt ::= "إذا" "(" Condition ")" Block [ "وإلا" Block ] */
-void IfStmt() : {}
+Stmt IfStmt() : 
+{ final Expr cond; final Stmt ifBody, elseBody;  }
 {
-  <ETHA> <LPAREN> Condition() <RPAREN> Block() [ <WA_ELLA> Block() ]
+  <ETHA> <LPAREN> cond = Condition() <RPAREN> ifBody = Block() [ <WA_ELLA> elseBody = Block() ]
+  {
+    return new Stmt() {
+      public void exec() {
+        if(Boolean.TRUE.equals(cond.eval())) {
+          ifBody.exec();
+        } else {
+          if(elseBody != null ) elseBody.exec();
+        }
+      }
+    }
+  }
 }
 
 /* WhileStmt ::= "بينما" "(" Condition ")" Block */
-void WhileStmt() : {}
+Stmt WhileStmt() : 
+{ final Expr cond; final Stmt body; }
 {
-  <BAYNAMA> <LPAREN> Condition() <RPAREN> Block()
+  <BAYNAMA> <LPAREN> cond = Condition() <RPAREN> body = Block()
+  {
+    return new Stmt() {
+      public void exec() {
+        while(Boolean.TRUE.equals(cond.eval())) {
+          body.exec();
+        }
+      }
+    }
+  }
 }
 
 /* Block ::= "{" ( Statement )* "}" */
-void Block() : {}
+Stmt Block() : 
 {
-  <LBRACE> ( Statement() )* <RBRACE>
+  List<Stmt> stmts = new ArrayList<Stmt>();
+  Stmt s;
+}
+{
+  <LBRACE> ( s = Statement() { stmts.add(s); } )* <RBRACE>
+  {
+    return new Stmt() {
+      public void exec() {
+        for(Stmt s : stmts) {
+          s.exec();
+        }
+      }
+    }
+  }
 }
 
 /* Condition ::= Expression [ RelOp Expression ] */
