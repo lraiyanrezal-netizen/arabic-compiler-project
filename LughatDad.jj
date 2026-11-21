@@ -126,21 +126,48 @@ Stmt Statement() :
 }
 
 /* VarDecl ::= "متغير" IDENTIFIER [ "=" Expression ] ";" */
-void VarDecl() : {}
+Stmt VarDecl() : 
+{ Token id; Expr e = null; }
 {
-  <MUTA_GHAYYER> <ARABIC_IDENTIFIER> [ <ASSIGN> Expression() ] <SEMICOLON>
+  <MUTA_GHAYYER> id = <ARABIC_IDENTIFIER> [ <ASSIGN> e = Expression() ] <SEMICOLON> {
+    return new Stmt() {
+      public void exec() {
+        symbolTable.put(id.image, e != null ? e.eval() : null)
+      }
+    }
+  }
 }
 
 /* Assignment ::= IDENTIFIER "=" Expression ";" */
-void Assignment() : {}
+Stmt Assignment() : 
+{ Token id; Expr e; }
 {
-  <ARABIC_IDENTIFIER> <ASSIGN> Expression() <SEMICOLON>
+  id = <ARABIC_IDENTIFIER> <ASSIGN> e = Expression() <SEMICOLON>
+  {
+    return new Stmt() {
+      public void exec() {
+        if(symbolTable.containsKey(id.image)) {
+          symbolTable.put(id.image, e.eval());
+        } else {
+          throw new RuntimeException("Variable " + id.image + " must be declared first.");
+        }
+      }
+    }
+  }
 }
 
 /* PrintStmt ::= "اطبع" Expression ";" */
-void PrintStmt() : {}
+Stmt PrintStmt() : 
+{ final Expr e; }
 {
-  <ITBA3> Expression() <SEMICOLON>
+  <ITBA3> e = Expression() <SEMICOLON>
+  {
+    return new Stmt() {
+      public void exec() {
+        System.out.println(e.eval());
+      }
+    }
+  }
 }
 
 /* IfStmt ::= "إذا" "(" Condition ")" Block [ "وإلا" Block ] */
