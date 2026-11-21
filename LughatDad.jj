@@ -225,10 +225,11 @@ Stmt Block() :
 
 /* Condition ::= Expression [ RelOp Expression ] */
 Expr Condition() : 
-{ Expr left, right; Token op; }
+{ Expr left, right = null; Token op = null; }
 {
   left = Expression() [ op = RelOp() right = Expression() ]
   {
+    if(op == null) return left;
     return new Expr() {
       public Object eval() {
         Object l = left.eval(), r = right.eval();
