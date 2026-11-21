@@ -246,6 +246,7 @@ Expr Condition() :
             return l >= r;
           case LTE:
             return l <= r;
+          default: throw new RuntimeException("Unknown operator");
         }
       }
     }
@@ -349,7 +350,9 @@ Expr Factor() :
     }
   | <MINUS> e = Factor()
     {
-      final Double negated = ((Double) e.eval()) * -1;
-      return new Expr() { public Object eval() { return negated; } }
+      final Expr expr = e;
+      return new Expr() {
+        public Object eval() { return -((Double) expr.eval()); }
+      };
     }
 }
