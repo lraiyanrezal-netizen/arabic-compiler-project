@@ -134,7 +134,7 @@ Stmt VarDecl() :
       public void exec() {
         symbolTable.put(id.image, e != null ? e.eval() : null)
       }
-    }
+    };
   }
 }
 
@@ -152,7 +152,7 @@ Stmt Assignment() :
           throw new RuntimeException("Variable " + id.image + " must be declared first.");
         }
       }
-    }
+    };
   }
 }
 
@@ -166,7 +166,7 @@ Stmt PrintStmt() :
       public void exec() {
         System.out.println(e.eval());
       }
-    }
+    };
   }
 }
 
@@ -184,7 +184,7 @@ Stmt IfStmt() :
           if(elseBody != null ) elseBody.exec();
         }
       }
-    }
+    };
   }
 }
 
@@ -200,7 +200,7 @@ Stmt WhileStmt() :
           body.exec();
         }
       }
-    }
+    };
   }
 }
 
@@ -219,7 +219,7 @@ Stmt Block() :
           s.exec();
         }
       }
-    }
+    };
   }
 }
 
@@ -258,7 +258,7 @@ Expr Condition() :
           default: throw new RuntimeException("Unknown operator");
         }
       }
-    }
+    };
   }
 }
 
@@ -327,12 +327,12 @@ Expr Factor() :
     t = <NUMBER>
     {
       final double val = Double.parseDouble(t.image);
-      return new Expr() { public Object eval() { return val; } }
+      return new Expr() { public Object eval() { return val; } };
     }
   | t = <STRING> 
     {
       final String val = t.image.substring(1, t.image.length() - 1)
-      return new Expr() { public Object eval() { return val; } }
+      return new Expr() { public Object eval() { return val; } };
     }
   | t = <ARABIC_IDENTIFIER>
     {
@@ -347,11 +347,11 @@ Expr Factor() :
     }
   | <SAH>
     {
-      return new Expr() { public Object eval() { return Boolean.TRUE; } }
+      return new Expr() { public Object eval() { return Boolean.TRUE; } };
     }
   | <KHATA>
     {
-      return new Expr() { public Object eval() { return Boolean.FALSE; } }
+      return new Expr() { public Object eval() { return Boolean.FALSE; } };
     }
   | <LPAREN> e = Expression() <RPAREN>
     {
