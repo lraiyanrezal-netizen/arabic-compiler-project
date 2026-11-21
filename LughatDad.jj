@@ -132,7 +132,7 @@ Stmt VarDecl() :
   <MUTA_GHAYYER> id = <ARABIC_IDENTIFIER> [ <ASSIGN> e = Expression() ] <SEMICOLON> {
     return new Stmt() {
       public void exec() {
-        symbolTable.put(id.image, e != null ? e.eval() : null)
+        symbolTable.put(id.image, e != null ? e.eval() : null);
       }
     };
   }
@@ -331,7 +331,7 @@ Expr Factor() :
     }
   | t = <STRING> 
     {
-      final String val = t.image.substring(1, t.image.length() - 1)
+      final String val = t.image.substring(1, t.image.length() - 1);
       return new Expr() { public Object eval() { return val; } };
     }
   | t = <ARABIC_IDENTIFIER>
