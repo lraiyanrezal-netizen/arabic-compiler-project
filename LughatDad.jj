@@ -230,22 +230,31 @@ Expr Condition() :
   left = Expression() [ op = RelOp() right = Expression() ]
   {
     if(op == null) return left;
+    final Expr lExpr = left, rExpr = right;
+    final int kind = op.kind;
     return new Expr() {
       public Object eval() {
-        Object l = left.eval(), r = right.eval();
+        Object l = lExpr.eval(), r = rExpr.eval();
+
+        if(kind == EQ) return Objects.equals(l, r);
+        if(kind == NEQ) return !Objects.equals(l, r)
+
+        if(!(l instanceof Double) || !(r instanceof Double)) {
+          throw new RuntimeException("Ordering operators (<, >, <=, >=) require numbers.");
+        }
+
+        double a = (Double) l;
+        double b = (Double) r;
+
         switch(op.kind) {
-          case EQ:
-            return l == r;
-          case NEQ:
-            return l != r;
           case GT:
-            return l > r;
+            return a > b;
           case LT:
-            return l < r;
+            return a < b;
           case GTE:
-            return l >= r;
+            return a >= b;
           case LTE:
-            return l <= r;
+            return a <= b;
           default: throw new RuntimeException("Unknown operator");
         }
       }
