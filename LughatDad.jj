@@ -127,12 +127,14 @@ Stmt Statement() :
 
 /* VarDecl ::= "متغير" IDENTIFIER [ "=" Expression ] ";" */
 Stmt VarDecl() : 
-{ Token id; Expr e = null; }
+{ final Token id; Expr e = null; }
 {
-  <MUTA_GHAYYER> id = <ARABIC_IDENTIFIER> [ <ASSIGN> e = Expression() ] <SEMICOLON> {
+  <MUTA_GHAYYER> id = <ARABIC_IDENTIFIER> [ <ASSIGN> e = Expression() ] <SEMICOLON> 
+  {
+    final Expr finalExpr = e;
     return new Stmt() {
       public void exec() {
-        symbolTable.put(id.image, e != null ? e.eval() : null);
+        symbolTable.put(id.image, finalExpr != null ? finalExpr.eval() : null);
       }
     };
   }
@@ -172,16 +174,17 @@ Stmt PrintStmt() :
 
 /* IfStmt ::= "إذا" "(" Condition ")" Block [ "وإلا" Block ] */
 Stmt IfStmt() : 
-{ final Expr cond; final Stmt ifBody, elseBody;  }
+{ final Expr cond; final Stmt ifBody; Stmt elseBody = null;  }
 {
   <ETHA> <LPAREN> cond = Condition() <RPAREN> ifBody = Block() [ <WA_ELLA> elseBody = Block() ]
   {
+    final Stmt finalElse = elseBody;
     return new Stmt() {
       public void exec() {
         if(Boolean.TRUE.equals(cond.eval())) {
           ifBody.exec();
         } else {
-          if(elseBody != null ) elseBody.exec();
+          if(finalElse != null ) finalElse.exec();
         }
       }
     };
@@ -215,8 +218,8 @@ Stmt Block() :
   {
     return new Stmt() {
       public void exec() {
-        for(Stmt s : stmts) {
-          s.exec();
+        for(Stmt stmt : stmts) {
+          stmt.exec();
         }
       }
     };
