@@ -162,27 +162,85 @@ void Block() : {}
 }
 
 /* Condition ::= Expression [ RelOp Expression ] */
-void Condition() : {}
+void Condition() : 
+{ Expr left, right; Token op; }
 {
-  Expression() [ RelOp() Expression() ]
+  left = Expression() [ op = RelOp() right = Expression() ]
+  {
+    return new Expr() {
+      public Object eval() {
+        Object l = left.eval(), r = right.eval();
+        switch(op.kind) {
+          case EQ:
+            return l == r;
+          case NEQ:
+            return l != r;
+          case GT:
+            return l > r;
+          case LT:
+            return l < r;
+          case GTE:
+            return l >= r;
+          case LTE:
+            return l <= r;
+        }
+      }
+    }
+  }
 }
 
 /* RelOp ::= "==" | "!=" | ">" | "<" | ">=" | "<=" */
-void RelOp() : {}
+Token RelOp() : {}
 {
   <EQ> | <NEQ> | <GT> | <LT> | <GTE> | <LTE>
 }
 
 /* Expression ::= Term ( ("+" | "-") Term )* */
-void Expression() : {}
+Expr Expression() : 
+{ Expr left, right; Token op; }
 {
-  Term() ( ( <PLUS> | <MINUS> ) Term() )*
+  left = Term()
+  (
+    ( op = <PLUS> | op = <MINUS> )
+    right = Term()
+    {
+      final Expr l = left, r = right;
+      final int kind = op.kind;
+      left = new Expr() {
+        public Object eval() {
+          double a = (Double) l.eval();
+          double b = (Double) r.eval();
+          return (kind == PLUS) ? (a + b) : (a - b);
+        }
+      };
+    }
+  )*
+  { return left; }
+  // Term() ( ( <PLUS> | <MINUS> ) Term() )*
 }
 
 /* Term ::= Factor ( ("*" | "/") Factor )* */
-void Term() : {}
+Expr Term() : 
+{ Expr left, right; Token op; }
 {
-  Factor() ( ( <STAR> | <SLASH> ) Factor() )*
+
+  left = Factor()
+  (
+    ( op = <STAR> | op = <SLASH> )
+    right = Factor()
+    {
+      final Expr l = left, r = right;
+      final int kind = op.kind;
+      left = new Expr() {
+        public Object eval() {
+          double a = (Double) l.eval();
+          double b = (Double) r.eval();
+          return (kind == STAR) ? (a * b) : (a / b);
+        }
+      };
+    } 
+  )*
+  { return left; }
 }
 
 /* Factor ::= NUMBER | STRING | IDENTIFIER | صح | خطأ | "(" Expression ")" | "-" Factor */
