@@ -162,7 +162,7 @@ void Block() : {}
 }
 
 /* Condition ::= Expression [ RelOp Expression ] */
-void Condition() : 
+Expr Condition() : 
 { Expr left, right; Token op; }
 {
   left = Expression() [ op = RelOp() right = Expression() ]
