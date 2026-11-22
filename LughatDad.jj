@@ -33,6 +33,10 @@ public class LughatDad {
       Object lv = l.eval(), rv = r.eval();
       if (kind == EQ) return Objects.equals(lv, rv);
       if (kind == NEQ) return !Objects.equals(lv, rv);
+      // Extended feature: String Concat
+      if(kind == PLUS && (lv instanceof String || rv instanceof String)) {
+        return String.valueOf(lv) + String.valueOf(rv);
+      }
       if (!(lv instanceof Double) || !(rv instanceof Double))
         throw new RuntimeException("Operators require numbers.");
       double a = (Double) lv, b = (Double) rv;
