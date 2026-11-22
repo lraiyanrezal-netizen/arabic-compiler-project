@@ -12,8 +12,9 @@
    `java -Dfile.encoding=UTF-8 LughatDad`
 
 ## How to Exit
-* Finish & Exit: Press `Ctrl + D` on a new line.
-* Force Quit: Press `Ctrl + C`.
+
+- Finish & Exit: Press `Ctrl + D` on a new line.
+- Force Quit: Press `Ctrl + C`.
 
 ---
 
@@ -27,17 +28,11 @@ npm start        # builds if needed, then serves http://localhost:3000
 
 or double-click `start.bat`. Ports/timeouts: `PORT` (default 3000), `RUN_TIMEOUT_MS` (default 6000).
 
-| Path | What it is |
-| --- | --- |
-| `web/server.js` | zero-dependency HTTP server; `POST /api/run` pipes the code into the parser |
-| `web/build.js` | javacc → javac → runner build (auto-downloads `tools/javacc.jar` if missing) |
+| Path                            | What it is                                                                                           |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `web/server.js`                 | zero-dependency HTTP server; `POST /api/run` pipes the code into the parser                          |
+| `web/build.js`                  | javacc → javac → runner build (auto-downloads `tools/javacc.jar` if missing)                         |
 | `web/runtime/ArabicRunner.java` | runs a program non-interactively and returns JSON: output, error (+line), token stream, symbol table |
-| `web/public/` | the interface: Arabic UI, syntax highlighting, terminal, tokens, variables, Arabic error messages |
+| `web/public/`                   | the interface: Arabic UI, syntax highlighting, terminal, tokens, variables, Arabic error messages    |
 
 Deep links for demos: `/?ex=3` loads example #3, `/?ex=5&pane=tokens` opens the tokens tab.
-
-### Notes on the grammar
-
-* `لكل` (for) was declared but unreachable from `Statement`; it is now part of the statement alternatives and its header is `لكل (متغير س = 0; س < 5; س = س + 1) { ... }`
-  (the increment is parsed inline, because `Assignment` already consumes its own `;`).
-* `VarDecl` was missing the `;` after the duplicate-declaration `throw`, which stopped JavaCC from generating the parser at all.
