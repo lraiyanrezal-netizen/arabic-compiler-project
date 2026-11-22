@@ -10,8 +10,44 @@ import java.util.*;
 
 public class LughatDad {
   static HashMap<String, Object> symbolTable = new HashMap<>();
-  interface Expr {
-    Object eval();
+  interface Expr { Object eval(); }
+  static class LitExpr implements Expr {
+    final Object v; LitExpr(Object v) { this.v = v; }
+    public Object eval() { return v; }
+  }
+  static class VarExpr implements Expr {
+    final String name; VarExpr(String name) { this.name = name; }
+    public Object eval() {
+      if (!symbolTable.containsKey(name)) throw new RuntimeException("Undefined variable: " + name);
+      return symbolTable.get(name);
+    }
+  }
+  static class NegExpr implements Expr {
+    final Expr e; NegExpr(Expr e) { this.e = e; }
+    public Object eval() { return -((Double) e.eval()); }
+  }
+  static class BinExpr implements Expr {
+    final Expr l, r; final int kind;
+    BinExpr(Expr l, Expr r, int kind) { this.l = l; this.r = r; this.kind = kind; }
+    public Object eval() {
+      Object lv = l.eval(), rv = r.eval();
+      if (kind == EQ) return Objects.equals(lv, rv);
+      if (kind == NEQ) return !Objects.equals(lv, rv);
+      if (!(lv instanceof Double) || !(rv instanceof Double))
+        throw new RuntimeException("Operators require numbers.");
+      double a = (Double) lv, b = (Double) rv;
+      switch (kind) {
+        case PLUS: return a + b;
+        case MINUS: return a - b;
+        case STAR: return a * b;
+        case SLASH: return a / b;
+        case GT: return a > b;
+        case LT: return a < b;
+        case GTE: return a >= b;
+        case LTE: return a <= b;
+        default: throw new RuntimeException("Unknown operator");
+      }
+    }
   }
   interface Stmt {
     void exec();
@@ -227,98 +263,43 @@ Stmt Block() :
 }
 
 /* Condition ::= Expression [ RelOp Expression ] */
-Expr Condition() : 
+Expr Condition() :
 { Expr left, right = null; Token op = null; }
 {
   left = Expression() [ op = RelOp() right = Expression() ]
-  {
-    if(op == null) return left;
-    final Expr lExpr = left, rExpr = right;
-    final int kind = op.kind;
-    return new Expr() {
-      public Object eval() {
-        Object l = lExpr.eval(), r = rExpr.eval();
-
-        if(kind == EQ) return Objects.equals(l, r);
-        if(kind == NEQ) return !Objects.equals(l, r)
-
-        if(!(l instanceof Double) || !(r instanceof Double)) {
-          throw new RuntimeException("Ordering operators (<, >, <=, >=) require numbers.");
-        }
-
-        double a = (Double) l;
-        double b = (Double) r;
-
-        switch(op.kind) {
-          case GT:
-            return a > b;
-          case LT:
-            return a < b;
-          case GTE:
-            return a >= b;
-          case LTE:
-            return a <= b;
-          default: throw new RuntimeException("Unknown operator");
-        }
-      }
-    };
-  }
+  { return (op == null) ? left : new BinExpr(left, right, op.kind); }
 }
 
 /* RelOp ::= "==" | "!=" | ">" | "<" | ">=" | "<=" */
-Token RelOp() : 
+Token RelOp() :
 { Token t; }
 {
-  t = <EQ> | t = <NEQ> | t = <GT> | t = <LT> | t = <GTE> | t = <LTE>
-  {
-    return t;
-  }
+  ( t = <EQ> | t = <NEQ> | t = <GT> | t = <LT> | t = <GTE> | t = <LTE> )
+  { return t; }
 }
 
 /* Expression ::= Term ( ("+" | "-") Term )* */
-Expr Expression() : 
+Expr Expression() :
 { Expr left, right; Token op; }
 {
   left = Term()
   (
     ( op = <PLUS> | op = <MINUS> )
     right = Term()
-    {
-      final Expr l = left, r = right;
-      final int kind = op.kind;
-      left = new Expr() {
-        public Object eval() {
-          double a = (Double) l.eval();
-          double b = (Double) r.eval();
-          return (kind == PLUS) ? (a + b) : (a - b);
-        }
-      };
-    }
+    { left = new BinExpr(left, right, op.kind); }
   )*
   { return left; }
-  // Term() ( ( <PLUS> | <MINUS> ) Term() )*
 }
 
 /* Term ::= Factor ( ("*" | "/") Factor )* */
-Expr Term() : 
+Expr Term() :
 { Expr left, right; Token op; }
 {
-
   left = Factor()
   (
     ( op = <STAR> | op = <SLASH> )
     right = Factor()
-    {
-      final Expr l = left, r = right;
-      final int kind = op.kind;
-      left = new Expr() {
-        public Object eval() {
-          double a = (Double) l.eval();
-          double b = (Double) r.eval();
-          return (kind == STAR) ? (a * b) : (a / b);
-        }
-      };
-    } 
+    { left = new BinExpr(left, right, op.kind); }
   )*
   { return left; }
 }
@@ -328,43 +309,17 @@ Expr Factor() :
 { Token t; Expr e; }
 {
     t = <NUMBER>
-    {
-      final double val = Double.parseDouble(t.image);
-      return new Expr() { public Object eval() { return val; } };
-    }
-  | t = <STRING> 
-    {
-      final String val = t.image.substring(1, t.image.length() - 1);
-      return new Expr() { public Object eval() { return val; } };
-    }
+    { return new LitExpr(Double.parseDouble(t.image)); }
+  | t = <STRING>
+    { return new LitExpr(t.image.substring(1, t.image.length() - 1)); }
   | t = <ARABIC_IDENTIFIER>
-    {
-      final String name = t.image;
-      return new Expr() {
-        public Object eval() {
-          if(!symbolTable.containsKey(name))
-            throw new RuntimeException("Undefined variable: " + name);
-          return symbolTable.get(name);
-        }
-      };
-    }
+    { return new VarExpr(t.image); }
   | <SAH>
-    {
-      return new Expr() { public Object eval() { return Boolean.TRUE; } };
-    }
+    { return new LitExpr(Boolean.TRUE); }
   | <KHATA>
-    {
-      return new Expr() { public Object eval() { return Boolean.FALSE; } };
-    }
+    { return new LitExpr(Boolean.FALSE); }
   | <LPAREN> e = Expression() <RPAREN>
-    {
-      return e;
-    }
+    { return e; }
   | <MINUS> e = Factor()
-    {
-      final Expr expr = e;
-      return new Expr() {
-        public Object eval() { return -((Double) expr.eval()); }
-      };
-    }
+    { return new NegExpr(e); }
 }
