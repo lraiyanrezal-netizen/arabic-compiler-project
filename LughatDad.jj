@@ -178,6 +178,9 @@ Stmt VarDecl() :
     final Expr finalExpr = e;
     return new Stmt() {
       public void exec() {
+        if(symbolTable.containsKey(id.image)) {
+          throw new RuntimeException("This variable '" + id.image + "' has been declared before.")
+        }
         symbolTable.put(id.image, finalExpr != null ? finalExpr.eval() : null);
       }
     };
