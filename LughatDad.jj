@@ -88,6 +88,8 @@ TOKEN : /* KEYWORDS */
   | < ETHA : "\u0625\u0630\u0627" > /* إذا */
   | < WA_ELLA : "\u0648\u0625\u0644\u0627" > /* وإلا */
   | < BAYNAMA : "\u0628\u064a\u0646\u0645\u0627" > /* بينما */
+  | < LIKUL : "\u0644\u0643\u0644" > /* لكل */
+
 
   /*add the two missing keywords not  present */
   | <SAH: "\u0635\u062d"> /* صح - true*/
@@ -243,6 +245,24 @@ Stmt WhileStmt() :
       public void exec() {
         while(Boolean.TRUE.equals(cond.eval())) {
           body.exec();
+        }
+      }
+    };
+  }
+}
+
+/* ForStmt ::= "لكل" "(" VarDecl ";" Condition ";" Assignment ")" Block */
+Stmt ForStmt() :
+{ final Stmt declaration, assignment, body; final Expr cond; }
+{
+  <LIKUL> <LPAREN> declaration = VarDecl() <SEMICOLON> cond = Condition() <SEMICOLON> assignment = Assignment() <RPAREN> body = Block()
+  {
+    return new Stmt() {
+      public void exec() {
+        declaration.exec();
+        while(Boolean.TRUE.equals(cond.eval())) {
+          body.exec();
+          assignment.exec();
         }
       }
     };
