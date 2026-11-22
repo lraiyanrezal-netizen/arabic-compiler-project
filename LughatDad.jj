@@ -44,7 +44,9 @@ public class LughatDad {
         case PLUS: return a + b;
         case MINUS: return a - b;
         case STAR: return a * b;
-        case SLASH: return a / b;
+        case SLASH:
+          if (b == 0.0) throw new RuntimeException("Division by zero."); 
+          return a / b;
         case GT: return a > b;
         case LT: return a < b;
         case GTE: return a >= b;
