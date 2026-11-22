@@ -165,6 +165,7 @@ Stmt Statement() :
   | s = PrintStmt()
   | s = IfStmt()
   | s = WhileStmt()
+  | s = ForStmt()
   )
   { return s; }
 }
@@ -179,7 +180,7 @@ Stmt VarDecl() :
     return new Stmt() {
       public void exec() {
         if(symbolTable.containsKey(id.image)) {
-          throw new RuntimeException("This variable '" + id.image + "' has been declared before.")
+          throw new RuntimeException("This variable '" + id.image + "' has been declared before.");
         }
         symbolTable.put(id.image, finalExpr != null ? finalExpr.eval() : null);
       }
@@ -254,18 +255,21 @@ Stmt WhileStmt() :
   }
 }
 
-/* ForStmt ::= "لكل" "(" VarDecl ";" Condition ";" Assignment ")" Block */
+/* ForStmt ::= "لكل" "(" VarDecl Condition ";" IDENTIFIER "=" Expression ")" Block */
 Stmt ForStmt() :
-{ final Stmt declaration, assignment, body; final Expr cond; }
+{ final Stmt declaration, body; final Expr cond, inc; final Token id; }
 {
-  <LIKUL> <LPAREN> declaration = VarDecl() <SEMICOLON> cond = Condition() <SEMICOLON> assignment = Assignment() <RPAREN> body = Block()
+  <LIKUL> <LPAREN> declaration = VarDecl() cond = Condition() <SEMICOLON> id = <ARABIC_IDENTIFIER> <ASSIGN> inc = Expression() <RPAREN> body = Block()
   {
     return new Stmt() {
       public void exec() {
         declaration.exec();
         while(Boolean.TRUE.equals(cond.eval())) {
           body.exec();
-          assignment.exec();
+          if(!symbolTable.containsKey(id.image)) {
+            throw new RuntimeException("Variable " + id.image + " must be declared first.");
+          }
+          symbolTable.put(id.image, inc.eval());
         }
       }
     };
