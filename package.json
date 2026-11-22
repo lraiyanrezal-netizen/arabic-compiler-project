@@ -1,0 +1,14 @@
+{
+  "name": "lughatdad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "لغة الضاد — Arabic programming language (JavaCC) and its web showcase",
+  "scripts": {
+    "start": "node web/server.js",
+    "build": "node web/build.js",
+    "rebuild": "node web/build.js --force"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

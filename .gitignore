@@ -1,4 +1,9 @@
+# ignore everything that is generated or local
 *
-!LughatDad.jj
+!*/
 !.gitignore
 !README.md
+!LughatDad.jj
+!package.json
+!start.bat
+!web/**
