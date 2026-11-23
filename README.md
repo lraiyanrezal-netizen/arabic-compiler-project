@@ -23,10 +23,10 @@
 A browser interface that runs the real JavaCC parser: editor on the right, terminal on the left.
 
 ```bash
-npm start        # builds if needed, then serves http://localhost:3000
+npm start        # builds if needed, then serves http://localhost:3030
 ```
 
-or double-click `start.bat`. Ports/timeouts: `PORT` (default 3000), `RUN_TIMEOUT_MS` (default 6000).
+or double-click `start.bat`. Ports/timeouts: `PORT` (default 3030), `RUN_TIMEOUT_MS` (default 6000).
 
 | Path                            | What it is                                                                                           |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
