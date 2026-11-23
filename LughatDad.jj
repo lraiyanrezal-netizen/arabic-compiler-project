@@ -18,7 +18,8 @@ public class LughatDad {
   static class VarExpr implements Expr {
     final String name; VarExpr(String name) { this.name = name; }
     public Object eval() {
-      if (!symbolTable.containsKey(name)) throw new RuntimeException("Undefined variable: " + name);
+      if (!symbolTable.containsKey(name)) throw new RuntimeException(
+          "المتغيّر «" + name + "» غير معرَّف. عرِّفه أولًا: متغير " + name + " = 0;");
       return symbolTable.get(name);
     }
   }
@@ -38,20 +39,20 @@ public class LughatDad {
         return String.valueOf(lv) + String.valueOf(rv);
       }
       if (!(lv instanceof Double) || !(rv instanceof Double))
-        throw new RuntimeException("Operators require numbers.");
+        throw new RuntimeException("العملية الحسابية تحتاج رقمين — أحد الطرفين نص أو قيمة منطقية.");
       double a = (Double) lv, b = (Double) rv;
       switch (kind) {
         case PLUS: return a + b;
         case MINUS: return a - b;
         case STAR: return a * b;
         case SLASH:
-          if (b == 0.0) throw new RuntimeException("Division by zero."); 
+          if (b == 0.0) throw new RuntimeException("لا يمكن القسمة على صفر — تأكّد أن المقسوم عليه ليس صفرًا.");
           return a / b;
         case GT: return a > b;
         case LT: return a < b;
         case GTE: return a >= b;
         case LTE: return a <= b;
-        default: throw new RuntimeException("Unknown operator");
+        default: throw new RuntimeException("عامل غير معروف في التعبير.");
       }
     }
   }
@@ -60,15 +61,15 @@ public class LughatDad {
   }
   public static void main(String[] args) throws ParseException {
     LughatDad parser = new LughatDad(System.in);
-    System.out.println("Reading from standard input...");
-    System.out.print("Enter Arabic code: ");
+    System.out.println("لغة الضاد — اكتب البرنامج ثم اضغط Ctrl+D للتشغيل.");
+    System.out.print("الكود: ");
     try {
       List<Stmt> stmts = parser.Start();
       for(Stmt stmt : stmts) {
         stmt.exec();
       }
     } catch (Throwable e) {
-      System.out.println("Oops.");
+      System.out.println("توقّف التنفيذ:");
       System.out.println(e.getMessage());
     }
   }
@@ -180,7 +181,7 @@ Stmt VarDecl() :
     return new Stmt() {
       public void exec() {
         if(symbolTable.containsKey(id.image)) {
-          throw new RuntimeException("This variable '" + id.image + "' has been declared before.");
+          throw new RuntimeException("المتغيّر «" + id.image + "» معرَّف مسبقًا. للتعديل استخدم الإسناد: " + id.image + " = قيمة;");
         }
         symbolTable.put(id.image, finalExpr != null ? finalExpr.eval() : null);
       }
@@ -199,7 +200,7 @@ Stmt Assignment() :
         if(symbolTable.containsKey(id.image)) {
           symbolTable.put(id.image, e.eval());
         } else {
-          throw new RuntimeException("Variable " + id.image + " must be declared first.");
+          throw new RuntimeException("المتغيّر «" + id.image + "» غير معرَّف. عرِّفه أولًا: متغير " + id.image + " = 0;");
         }
       }
     };
@@ -267,7 +268,7 @@ Stmt ForStmt() :
         while(Boolean.TRUE.equals(cond.eval())) {
           body.exec();
           if(!symbolTable.containsKey(id.image)) {
-            throw new RuntimeException("Variable " + id.image + " must be declared first.");
+            throw new RuntimeException("المتغيّر «" + id.image + "» غير معرَّف. عرِّفه أولًا: متغير " + id.image + " = 0;");
           }
           symbolTable.put(id.image, inc.eval());
         }

@@ -29,223 +29,16 @@ const MIME = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Arabic error translation                                            */
+/* Errors                                                              */
 /* ------------------------------------------------------------------ */
 
-const unescape = (s) =>
-  String(s).replace(/\\u([0-9a-fA-F]{4})/g, (_, h) =>
-    String.fromCharCode(parseInt(h, 16)),
-  );
-
-const clean = (s) =>
-  unescape(s)
-    .replace(/\r/g, "")
-    .replace(/[ \t]+$/gm, "")
-    .trim();
-
-const EXPECTED_AR = {
-  "<EOF>": "نهاية الملف",
-  "<ARABIC_IDENTIFIER>": "اسم متغير",
-  "<NUMBER>": "رقم",
-  "<STRING>": "نص بين علامتي تنصيص",
-  ";": "الفاصلة المنقوطة ;",
-  "(": "القوس (",
-  ")": "القوس )",
-  "{": "القوس {",
-  "}": "القوس }",
-};
-
-function translateToken(tok) {
-  const t = tok.trim().replace(/^"|"$/g, "").replace(/^<|>$/g, "");
-  if (EXPECTED_AR[t]) return EXPECTED_AR[t];
-  if (/^\+$|^-$|^\*$|^\/$|^==$|^!=$|^>$|^<$|^>=$|^<=$|^=$/.test(t))
-    return `«${t}»`;
-  return `«${t}»`;
-}
-
-function splitExpected(raw) {
-  const m = raw.match(/Was expecting(?: one of)?:\s*([\s\S]*)$/i);
-  if (!m) return [];
-  return m[1]
-    .split("\n")
-    .map((l) =>
-      l
-        .trim()
-        .replace(/\.\.\.$/, "")
-        .trim(),
-    )
-    .filter((l) => l && !/^Encountered|^Was expecting/i.test(l))
-    .map(translateToken)
-    .slice(0, 6);
-}
-
-function translateParseError(raw) {
-  const txt = clean(raw);
-  const line = Number((txt.match(/at line (\d+)/) || [])[1] || -1);
-  const column = Number((txt.match(/column (\d+)/) || [])[1] || -1);
-  const encMatch = txt.match(
-    /Encountered:\s*(?:<([^>]+)>|"([^"]*)"|(.+?))\s+at line/i,
-  );
-  const encounteredRaw = encMatch
-    ? (encMatch[1] || encMatch[2] || encMatch[3] || "").trim()
-    : "";
-  const eof =
-    /^<EOF>$|^<EOF>\s*$/i.test(encounteredRaw) ||
-    /Encountered "?\s*<EOF>/.test(txt);
-  const expected = splitExpected(txt);
-
-  let message;
-  if (eof) {
-    message = `انتهى الكود قبل أن تكتمل الجملة${line > 0 ? ` (السطر ${line}, العمود ${column})` : ""}.`;
-  } else {
-    const enc = encounteredRaw.startsWith("<")
-      ? translateToken(encounteredRaw)
-      : `«${encounteredRaw.replace(/^"|"$/g, "")}»`;
-    message =
-      `وجد المُحلِّل ${enc} في موضع غير متوقّع` +
-      (line > 0 ? ` عند السطر ${line}, العمود ${column}` : "") +
-      ".";
-  }
-  if (expected.length) message += ` كان المتوقَّع: ${expected.join(" / ")}.`;
-
-  let hint =
-    "راجع السطر: تأكّد من الفاصلة المنقوطة ; بعد كل جملة، ومن إغلاق الأقواس والكلمات المفتاحية.";
-  if (eof) {
-    hint =
-      "غالبًا نسيت الفاصلة المنقوطة ; في آخر جملة، أو أغلق القوس { } للحلقة/الشرط.";
-  } else if (expected.some((e) => e.includes(";"))) {
-    hint =
-      "الفاصلة المنقوطة ; ناقصة قبل هذا الموضع — كل جملة في «لغة الضاد» تنتهي بـ ;";
-  } else if (expected.some((e) => e.includes(")") || e.includes("}"))) {
-    hint = "أغلق القوس المفتوح قبل هذا الموضع.";
-  }
-  return { title: "خطأ نحوي", message, hint, line, column };
-}
-
-function translateLexicalError(raw) {
-  const txt = clean(raw);
-  const line = Number((txt.match(/line (\d+)/) || [])[1] || -1);
-  const column = Number((txt.match(/column (\d+)/) || [])[1] || -1);
-  const after = txt.match(/after prefix "([\s\S]*)"/);
-  const bad = txt.match(
-    /Encountered:\s*(?:<([^>]+)>|'([^']*)'|([\s\S]*?)(?:\(|$))/,
-  );
-
-  if (after) {
-    return {
-      title: "خطأ معجمي",
-      message: `نص غير مغلق: بدأت السلسلة النصية ولم تُغلق بعلامة " (السطر ${line}).`,
-      hint: 'أغلق النص بعلامة تنصيص مزدوجة " في نهايته.',
-      line,
-      column,
-    };
-  }
-  const ch = bad ? bad[1] || bad[2] || (bad[3] || "").trim() : "";
-  return {
-    title: "خطأ معجمي",
-    message: ch
-      ? `رمز لا يمكن قراءته: «${ch}»${line > 0 ? ` في السطر ${line}, العمود ${column}` : ""}.`
-      : `رمز غير معروف${line > 0 ? ` في السطر ${line}` : ""}.`,
-    hint: "المسموح: الحروف العربية للأسماء، الأرقام، + - * / = == != > < >= <= ، الأقواس ( ) { } ، والفاصلة المنقوطة ; .",
-    line,
-    column,
-  };
-}
-
-function translateRuntimeError(raw, symbols) {
-  const msg = clean(raw);
-  let hit;
-
-  if ((hit = msg.match(/^Undefined variable:\s*(.+)$/))) {
-    const name = hit[1].trim();
-    return {
-      title: "متغيّر غير معرَّف",
-      message: `تم استخدام «${name}» قبل تعريفه.`,
-      hint: `أضف قبل استخدامه: متغير ${name} = 0;`,
-      name,
-    };
-  }
-  if ((hit = msg.match(/^This variable '?(.+?)'? has been declared before/))) {
-    const name = hit[1].trim();
-    return {
-      title: "تعريف مكرَّر",
-      message: `المتغيّر «${name}» معرَّف مسبقًا في نفس البرنامج.`,
-      hint: `لتغيير قيمته استخدم الإسناد فقط: ${name} = قيمة;`,
-      name,
-    };
-  }
-  if ((hit = msg.match(/^Variable (.+?) must be declared first/))) {
-    const name = hit[1].trim();
-    return {
-      title: "إسناد قبل التعريف",
-      message: `لا يمكن إسناد قيمة لـ «${name}» لأنه غير معرَّف.`,
-      hint: `عرّفه أولًا: متغير ${name} = 0;`,
-      name,
-    };
-  }
-  if (/^Division by zero/i.test(msg)) {
-    return {
-      title: "قسمة على صفر",
-      message: "لا يمكن القسمة على صفر.",
-      hint: "تأكّد أن المقسوم عليه لا يساوي صفرًا قبل عملية القسمة.",
-    };
-  }
-  if (/^Operators require numbers/i.test(msg)) {
-    return {
-      title: "أنواع غير متوافقة",
-      message:
-        "العملية الحسابية تحتاج أرقامًا، وواحد من الطرفين نص أو قيمة منطقية.",
-      hint: 'الجمع + يسمح بضم النصوص فقط عندما يكون أحد الطرفين نصًا، مثل: "النتيجة: " + س',
-    };
-  }
-  if (/^Stack overflow/i.test(msg)) {
-    return {
-      title: "تجاوز العمق",
-      message: "البرنامج تجاوز حدود التنفيذ.",
-      hint: "قلّل التكرار أو العمق.",
-    };
-  }
-  return {
-    title: "خطأ أثناء التنفيذ",
-    message: msg || "خطأ غير معروف.",
-    hint:
-      symbols && symbols.length
-        ? "الحالة الحالية للمتغيّرات معروضة في تبويب «المتغيّرات»."
-        : "راجع الكود؛ فقد يكون هناك استخدام خاطئ لقيمة أو نوع.",
-  };
-}
-
-function jsonError(kind, raw, extra) {
-  return { kind, raw: clean(raw), ...extra };
-}
-
 /**
- * Runtime errors carry no position (the grammar only tracks tokens for the
- * parser). Find the most likely line from the identifier in the message so the
- * editor can still point at it — flagged as approximate in the UI.
+ * One shape for every error the page shows. The text is already Arabic:
+ * semantic errors are written in LughatDad.jj, and ArabicRunner rewrites the
+ * parser/lexer messages that JavaCC generates in English.
  */
-function guessLine(code, name, mode) {
-  if (!name) return -1;
-  const lines = code.split(/\r?\n/);
-  const word = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(
-    `(^|[^\\u0600-\\u06FF0-9])${word}([^\\u0600-\\u06FF0-9]|$)`,
-  );
-
-  if (mode === "decl") {
-    const decls = [];
-    lines.forEach((l, i) => {
-      if (/^\s*متغير\s/.test(l) && re.test(l)) decls.push(i + 1);
-    });
-    return decls.length > 1 ? decls[decls.length - 1] : -1;
-  }
-
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i];
-    if (/^\s*متغير\s/.test(line)) continue;
-    if (re.test(line)) return i + 1;
-  }
-  return -1;
+function jsonError(kind, raw, extra) {
+  return { kind, raw: String(raw || ""), hint: "", approx: false, ...extra };
 }
 
 /* ------------------------------------------------------------------ */
@@ -366,48 +159,15 @@ function runProgram(code) {
       const symbols = data.symbols || [];
       let error = null;
       if (data.error) {
-        const raw = data.error.message || "";
-        let t;
-        if (data.error.kind === "syntax") t = translateParseError(raw);
-        else if (data.error.kind === "lexical") t = translateLexicalError(raw);
-        else if (data.error.kind === "runtime")
-          t = translateRuntimeError(raw, symbols);
-        else {
-          t = {
-            title: "خطأ داخلي",
-            message: clean(raw) || "خطأ غير معروف.",
-            hint: "راجع سجلّ الخادم.",
-            line: -1,
-            column: -1,
-          };
-        }
-        error = jsonError(data.error.kind, raw, {
-          ...t,
-          line:
-            Number.isFinite(t.line) && t.line > 0
-              ? t.line
-              : data.error.line > 0
-                ? data.error.line
-                : -1,
-          column:
-            Number.isFinite(t.column) && t.column > 0
-              ? t.column
-              : data.error.column > 0
-                ? data.error.column
-                : -1,
+        const e = data.error;
+        error = jsonError(e.kind, e.raw || e.message, {
+          title: e.title || "خطأ",
+          message: e.message || "",
+          hint: e.hint || "",
+          approx: !!e.approx,
+          line: e.line > 0 ? e.line : -1,
+          column: e.column > 0 ? e.column : -1,
         });
-
-        if (data.error.kind === "runtime" && !(error.line > 0) && t.name) {
-          const guessed = guessLine(
-            code,
-            t.name,
-            /مكرَّر/.test(t.title) ? "decl" : "use",
-          );
-          if (guessed > 0) {
-            error.line = guessed;
-            error.approx = true;
-          }
-        }
       }
 
       resolve({
